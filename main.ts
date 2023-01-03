@@ -28,6 +28,18 @@ const DEFAULT_SETTINGS: HabitTrackerPluginSettings = {
   Saturday: 'SAT'
 }
 
+interface Entry {
+  date: string
+  content: string
+}
+
+interface CalendarData {
+  year: number
+  month: number
+  width: string
+  entries: Entry[]
+}
+
 export default class HabitTrackerPlugin extends Plugin {
   settings: HabitTrackerPluginSettings;
 
@@ -36,9 +48,17 @@ export default class HabitTrackerPlugin extends Plugin {
 
     this.addSettingTab(new HabitTrackerSettingTab(this.app, this));
 
-    this.registerMarkdownCodeBlockProcessor('habitt', (source, el) => {
-      el.appendChild(renderTable(source, this));
-    })
+
+    //@ts-ignore
+    window.renderHabitCalendar = (el: HTMLElement, calendarData: CalendarData): void => {
+      let ctx = fromCalendarData(calendarData, this.settings)
+
+      const styles = ctx.tableWidth ? `width: ${ctx.tableWid};` : '';
+      const table = createEl('table', { cls: 'habitt', attr: { style: styles } })
+      table.appendChild(renderHead(ctx))
+      table.appendChild(renderBody(ctx))
+      el.appendChild(table);
+    }
   }
 
   async loadSettings() {
@@ -61,7 +81,7 @@ interface HabitTrackerContext {
   error: string
 }
 
-function renderTable (source: string, plugin: HabitTrackerPlugin) {
+function renderTable(source: string, plugin: HabitTrackerPlugin) {
   const { settings } = plugin;
   const ctx = parseContext(source, settings);
 
@@ -70,10 +90,47 @@ function renderTable (source: string, plugin: HabitTrackerPlugin) {
   }
 
   const styles = ctx.tableWidth ? `width: ${ctx.tableWidth};` : '';
-  const table = createEl('table', { cls: 'habitt', attr: { style: styles }})
+  const table = createEl('table', { cls: 'habitt', attr: { style: styles } })
   table.appendChild(renderHead(ctx))
   table.appendChild(renderBody(ctx))
   return table
+}
+
+function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPluginSettings): HabitTrackerContext {
+  const ctx: HabitTrackerContext = {
+    startOfWeek: parseInt(settings.startOfWeek, 10),
+    startDay: 0,
+    monthDays: 0,
+    displayMonth: '',
+    tableWidth: '',
+    marks: new Map<number, string>(),
+    settings,
+    error: ''
+  };
+
+  const mon = moment(`${calendarData.year}-${calendarData.month}`, 'YYYY-M')
+  if (!mon.isValid()) {
+    ctx.error = `Fail: Invalid Date ${m[0]}`;
+    return ctx;
+  }
+
+  ctx.displayMonth = mon.format(settings.monthFormat);
+  ctx.startDay = mon.startOf('month').day();
+  ctx.monthDays = mon.endOf('month').date();
+
+  // table width (optional)
+  if (calendarData.width) {
+    ctx.tableWidth = calendarData.width
+  }
+
+  // punch in
+  calendarData.entries.forEach(entry => {
+    // TODO check range
+    const d = moment(entry.date, 'YYYY-MM-DD')
+    ctx.marks.set(d.date(), entry.content)
+  })
+
+  return ctx;
 }
 
 function parseContext(source: string, settings: HabitTrackerPluginSettings): HabitTrackerContext {
@@ -104,7 +161,7 @@ function parseContext(source: string, settings: HabitTrackerPluginSettings): Hab
   ctx.displayMonth = mon.format(settings.monthFormat);
   ctx.startDay = mon.startOf('month').day();
   ctx.monthDays = mon.endOf('month').date();
-  
+
   // table width (optional)
   const wm = source.match(/\[width:\s*(\S*?)\s*\]/);
   if (wm && wm[1]) {
@@ -127,10 +184,10 @@ function parseContext(source: string, settings: HabitTrackerPluginSettings): Hab
   return ctx;
 }
 
-function renderHead (ctx: HabitTrackerContext): HTMLElement {
+function renderHead(ctx: HabitTrackerContext): HTMLElement {
   const { Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday } = ctx.settings;
   const WEEK = [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday];
-  
+
   const thead = createEl('thead');
 
   if (ctx.settings.displayHead) {
@@ -145,10 +202,10 @@ function renderHead (ctx: HabitTrackerContext): HTMLElement {
   return thead;
 }
 
-function renderBody (ctx: HabitTrackerContext): HTMLElement {
+function renderBody(ctx: HabitTrackerContext): HTMLElement {
   const startHolds = ctx.startDay >= ctx.startOfWeek ? ctx.startDay - ctx.startOfWeek : 7 - ctx.startOfWeek + ctx.startDay;
   let days = (new Array(ctx.monthDays)).fill(0).map((v, i) => i + 1);
-  const weeks:number[][] = [];
+  const weeks: number[][] = [];
 
   if (startHolds) {
     const startWeekDays = 7 - startHolds;
@@ -170,7 +227,7 @@ function renderBody (ctx: HabitTrackerContext): HTMLElement {
       lastWeek.push(0);
     }
   }
-  
+
   const tbody = createEl('tbody');
   const { enableHTML } = ctx.settings
   for (let i = 0; i < weeks.length; i++) {
@@ -178,7 +235,7 @@ function renderBody (ctx: HabitTrackerContext): HTMLElement {
     for (let j = 0; j < weeks[i].length; j++) {
       const d = weeks[i][j];
       const hasOwn = ctx.marks.has(d);
-      const td = tr.createEl('td', { cls: `habitt-td habitt-td--${d || 'disabled'} ${hasOwn ? 'habitt-td--checked' : ''}`});
+      const td = tr.createEl('td', { cls: `habitt-td habitt-td--${d || 'disabled'} ${hasOwn ? 'habitt-td--checked' : ''}` });
       const div = td.createDiv({ cls: 'habitt-c' });
       div.createDiv({ cls: 'habitt-date', text: `${d || ''}` });
       const dots = div.createDiv({ cls: 'habitt-dots' });
@@ -205,7 +262,7 @@ class HabitTrackerSettingTab extends PluginSettingTab {
   }
 
   display(): void {
-    const {containerEl} = this;
+    const { containerEl } = this;
 
     containerEl.empty();
 
@@ -264,7 +321,7 @@ class HabitTrackerSettingTab extends PluginSettingTab {
           this.plugin.settings.monthFormat = value;
           await this.plugin.saveSettings();
         }));
-    
+
     new Setting(containerEl)
       .setName('Sunday Label')
       .setDesc('Default is SUN')
@@ -274,7 +331,7 @@ class HabitTrackerSettingTab extends PluginSettingTab {
           this.plugin.settings.Sunday = value || DEFAULT_SETTINGS.Sunday;
           await this.plugin.saveSettings();
         }));
-    
+
     new Setting(containerEl)
       .setName('Monday Label')
       .setDesc('Default is MON')
@@ -284,7 +341,7 @@ class HabitTrackerSettingTab extends PluginSettingTab {
           this.plugin.settings.Monday = value || DEFAULT_SETTINGS.Monday;
           await this.plugin.saveSettings();
         }));
-    
+
     new Setting(containerEl)
       .setName('Tuesday Label')
       .setDesc('Default is TUE')
@@ -294,7 +351,7 @@ class HabitTrackerSettingTab extends PluginSettingTab {
           this.plugin.settings.Tuesday = value || DEFAULT_SETTINGS.Tuesday;
           await this.plugin.saveSettings();
         }));
-    
+
     new Setting(containerEl)
       .setName('Wednesday Label')
       .setDesc('Default is WED')
@@ -304,7 +361,7 @@ class HabitTrackerSettingTab extends PluginSettingTab {
           this.plugin.settings.Wednesday = value || DEFAULT_SETTINGS.Wednesday;
           await this.plugin.saveSettings();
         }));
-    
+
     new Setting(containerEl)
       .setName('Thursday Label')
       .setDesc('Default is THU')
@@ -314,7 +371,7 @@ class HabitTrackerSettingTab extends PluginSettingTab {
           this.plugin.settings.Thursday = value || DEFAULT_SETTINGS.Thursday;
           await this.plugin.saveSettings();
         }));
-    
+
     new Setting(containerEl)
       .setName('Friday Label')
       .setDesc('Default is FRI')
@@ -324,7 +381,7 @@ class HabitTrackerSettingTab extends PluginSettingTab {
           this.plugin.settings.Friday = value || DEFAULT_SETTINGS.Friday;
           await this.plugin.saveSettings();
         }));
-    
+
     new Setting(containerEl)
       .setName('Saturday Label')
       .setDesc('Default is SAT')
