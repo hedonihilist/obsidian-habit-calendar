@@ -22,10 +22,12 @@ You can pass the habit data and styles thru the second argument. The following f
 - `entries`: a list of entries containing the habit data per day. A entry contains
     - `date`: date of the habit
     - `content`: whatever you want to put in the calendar
+- `format`: the way you want `entries[i].content` to be rendered. Choose `html` or `markdown` to render as html or markdown, make sure their cooresopnding settings are enabled in the settings tab. Leave empty to treat the content as plain text.
+- `filepath`: if you want to render the content as markdown, pass the current file path thru this field.
 
 
 ## Plans
 
 - [x] jump right to the diary on click
 - [x] preview diary on hovering
-- [ ] support render markdown in calendar
+- [x] support render markdown in calendar

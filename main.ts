@@ -5,6 +5,7 @@ interface HabitTrackerPluginSettings {
   monthFormat: string;
   displayHead: boolean;
   enableHTML: boolean;
+  enableMarkdown: boolean;
   Sunday: string;
   Monday: string;
   Tuesday: string;
@@ -19,6 +20,7 @@ const DEFAULT_SETTINGS: HabitTrackerPluginSettings = {
   monthFormat: 'YYYY-MM',
   displayHead: true,
   enableHTML: false,
+  enableMarkdown: true,
   Sunday: 'SUN',
   Monday: 'MON',
   Tuesday: 'TUE',
@@ -38,6 +40,8 @@ interface CalendarData {
   year: number
   month: number
   width: string
+  filepath: string
+  format: string
   entries: Entry[]
 }
 
@@ -80,7 +84,8 @@ interface HabitTrackerContext {
   marks: Map<number, Entry>;
   settings: HabitTrackerPluginSettings,
   error: string,
-  calendarData: CalendarData
+  calendarData: CalendarData,
+  filepath: string,
 }
 
 function renderTable(source: string, plugin: HabitTrackerPlugin) {
@@ -109,6 +114,7 @@ function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPlug
     settings,
     error: '',
     calendarData,
+    filepath: calendarData.filepath
   };
 
   const mon = moment(`${calendarData.year}-${calendarData.month}`, 'YYYY-M')
@@ -253,10 +259,13 @@ function renderBody(ctx: HabitTrackerContext): HTMLElement {
       if (hasOwn) {
         const input = ctx.marks.get(d).content || '✔️'
         // treat as HTML
-        if (enableHTML) {
+        if (enableHTML && ctx.calendarData.format == 'html') {
           dots.innerHTML = `<div>${input}</div>`
+        } else if (ctx.settings.enableMarkdown && ctx.calendarData.format == 'markdown') {
+          const md_div = dots.createDiv();
+          MarkdownRenderer.renderMarkdown(input, md_div, ctx.filepath, this)
         } else {
-          dots.createDiv({ text: input });
+          dots.createDiv({ text: input })
         }
       }
     }
@@ -322,6 +331,18 @@ class HabitTrackerSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
+    
+    new Setting(containerEl)
+    .setName('Enable Markdown Rendering')
+    .setDesc('Treat your input text as Markdown.')
+    .addToggle(
+      dropdown => dropdown
+        .setValue(this.plugin.settings.enableMarkdown)
+        .onChange(async (value) => {
+          this.plugin.settings.enableMarkdown = value;
+          await this.plugin.saveSettings();
+        })
+    );
 
     new Setting(containerEl)
       .setName('Month Format')
