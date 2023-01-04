@@ -6,6 +6,7 @@
 }
 .habitt-head {
     font-size: .8em;
+    text-align: center !important;
 }
 .habitt td {
     padding: 0 4px;
@@ -14,6 +15,7 @@
 .habitt .habitt-th {
     color: var(--text-normal);
     font-size: .6em;
+    text-align: center;
 }
 .habitt .habitt-td {
     position: relative;
@@ -30,6 +32,9 @@
 }
 .habitt-date {
     padding-top: 4px;
+}
+.habitt-date a {
+    display: block;
 }
 .habitt .habitt-td--disabled {
     opacity: .5;

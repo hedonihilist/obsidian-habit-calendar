@@ -26,5 +26,6 @@ You can pass the habit data and styles thru the second argument. The following f
 
 ## Plans
 
-- [ ] jump right to the diary on click
-- [ ] preview diary on hovering
+- [x] jump right to the diary on click
+- [x] preview diary on hovering
+- [ ] support render markdown in calendar

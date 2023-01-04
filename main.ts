@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting, moment } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, moment, MarkdownRenderer } from 'obsidian';
 
 interface HabitTrackerPluginSettings {
   startOfWeek: string;
@@ -31,6 +31,7 @@ const DEFAULT_SETTINGS: HabitTrackerPluginSettings = {
 interface Entry {
   date: string
   content: string
+  link: string
 }
 
 interface CalendarData {
@@ -53,7 +54,7 @@ export default class HabitTrackerPlugin extends Plugin {
     window.renderHabitCalendar = (el: HTMLElement, calendarData: CalendarData): void => {
       let ctx = fromCalendarData(calendarData, this.settings)
 
-      const styles = ctx.tableWidth ? `width: ${ctx.tableWid};` : '';
+      const styles = ctx.tableWidth ? `width: ${ctx.tableWidth};` : '';
       const table = createEl('table', { cls: 'habitt', attr: { style: styles } })
       table.appendChild(renderHead(ctx))
       table.appendChild(renderBody(ctx))
@@ -76,9 +77,10 @@ interface HabitTrackerContext {
   monthDays: number;
   displayMonth: string;
   tableWidth: string,
-  marks: Map<number, string>;
+  marks: Map<number, Entry>;
   settings: HabitTrackerPluginSettings,
-  error: string
+  error: string,
+  calendarData: CalendarData
 }
 
 function renderTable(source: string, plugin: HabitTrackerPlugin) {
@@ -103,9 +105,10 @@ function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPlug
     monthDays: 0,
     displayMonth: '',
     tableWidth: '',
-    marks: new Map<number, string>(),
+    marks: new Map<number, Entry>(),
     settings,
-    error: ''
+    error: '',
+    calendarData,
   };
 
   const mon = moment(`${calendarData.year}-${calendarData.month}`, 'YYYY-M')
@@ -125,9 +128,10 @@ function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPlug
 
   // punch in
   calendarData.entries.forEach(entry => {
-    // TODO check range
     const d = moment(entry.date, 'YYYY-MM-DD')
-    ctx.marks.set(d.date(), entry.content)
+    if (d.year() == calendarData.year && d.month() + 1 == calendarData.month) {
+      ctx.marks.set(d.date(), entry)
+    }
   })
 
   return ctx;
@@ -140,7 +144,7 @@ function parseContext(source: string, settings: HabitTrackerPluginSettings): Hab
     monthDays: 0,
     displayMonth: '',
     tableWidth: '',
-    marks: new Map<number, string>(),
+    marks: new Map<number, Entry>(),
     settings,
     error: ''
   };
@@ -176,7 +180,7 @@ function parseContext(source: string, settings: HabitTrackerPluginSettings): Hab
       if (m) {
         const date = parseInt(m[1], 10);
         const tag = m[3];
-        ctx.marks.set(date, tag);
+        // ctx.marks.set(date, tag);
       }
     });
   }
@@ -237,10 +241,17 @@ function renderBody(ctx: HabitTrackerContext): HTMLElement {
       const hasOwn = ctx.marks.has(d);
       const td = tr.createEl('td', { cls: `habitt-td habitt-td--${d || 'disabled'} ${hasOwn ? 'habitt-td--checked' : ''}` });
       const div = td.createDiv({ cls: 'habitt-c' });
-      div.createDiv({ cls: 'habitt-date', text: `${d || ''}` });
+      // create link to file
+      if (hasOwn) {
+        const day_div = div.createDiv({ cls: 'habitt-date' });
+        const link = ctx.marks.get(d).link ? ctx.marks.get(d).link : ctx.marks.get(d).date
+        day_div.createEl('a', { text: `${d || ''}`, cls: "internal-link", href: link, attr: { "data-href": link, "target": "_blank", "rel": "noopener" } })
+      } else {
+        div.createDiv({ cls: 'habitt-date', text: `${d || ''}` });
+      }
       const dots = div.createDiv({ cls: 'habitt-dots' });
       if (hasOwn) {
-        const input = ctx.marks.get(d) || '✔️'
+        const input = ctx.marks.get(d).content || '✔️'
         // treat as HTML
         if (enableHTML) {
           dots.innerHTML = `<div>${input}</div>`
