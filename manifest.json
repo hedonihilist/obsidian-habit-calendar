@@ -1,10 +1,10 @@
 {
 	"id": "obsidian-habit-tracker",
 	"name": "Habit Tracker",
-	"version": "1.0.4",
+	"version": "1.0.0",
 	"minAppVersion": "0.9.12",
-	"description": "This plguin creates a simple Month view for visualizing your punch records.",
-	"author": "Duo",
-	"authorUrl": "https://github.com/duoani",
+	"description": "Monthly Habit Calendar for DataviewJS. This plugin helps you render a calendar inside DataviewJS code block, showing your habit status within a month.",
+	"author": "Hedonihilist",
+	"authorUrl": "https://github.com/hedonihilist",
 	"isDesktopOnly": false
 }
