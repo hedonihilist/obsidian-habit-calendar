@@ -1,6 +1,6 @@
 {
-  "name": "obsidian-habit-calendar",
-  "version": "1.0.7",
+  "name": "habit-calendar",
+  "version": "1.0.8",
   "description": "Monthly Habit Calendar for DataviewJS. This plugin helps you render a calendar inside DataviewJS code block, showing your habit status within a month.",
   "main": "main.js",
   "scripts": {
