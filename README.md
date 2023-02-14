@@ -128,6 +128,57 @@ You can pass the habit data through the second argument. The following fields ar
 - `format`: the way you want `entries[i].content` to be rendered. Choose `html` or `markdown` to render as html or markdown, make sure their cooresopnding settings are enabled in the settings tab. Leave empty to treat the content as plain text.
 - `filepath`: if you want to render the content as markdown, pass the current file path thru this field.
 
+## How I record my habits
+
+
+
+Check out the [example vault](https://github.com/hedonihilist/obsidian-habit-calendar/tree/master/ExampleVault). Your habits can look like this
+
+![Example](images/example.png)
+
+### Add habit templates
+
+In your diary template, add some habits you'd like to track:
+
+~~~
+```
+## habits
+
+- [ ] #habit read for (reading:: 30) minutes
+- [ ] #habit jog for (jogging:: 30) minutes
+- [ ] #habit get up before 8:00 am (wakey:: true)
+```
+~~~
+
+Here we use `#habit` tag to distinguish habits from normal tasks and use Dataview attributes to record the intensity of the habit.
+
+### Record habit
+
+Once you completed a habit, check the corresponding habit in your diary.
+
+![check habit](images/check_habits.png)
+
+### View your habits
+
+Use dataviewjs to query the accomplished habits and pass the data to `renderHabitCalendar`. The following code will query the days you did some reading.
+
+~~~
+```
+let files = dv.pages(`"diarys"`)
+let data = []
+for (let file of files) {
+	console.log(file)
+	for (let task of file.file.tasks) {
+		if (task.tags.contains('#habit') && task.checked && task.reading) { // select only checked habits
+			data.push({date: file.file.name, content: `📖 ${task.reading} min`})
+		}
+	} 
+}
+renderHabitCalendar(this.container, {year: 2023, month: 2, entries: data, filepath: dv.current().file.path, width: "100%"}) 
+```
+~~~
+
+![reading](images/reading.png)
 
 ## Plans
 
