@@ -88,21 +88,6 @@ interface HabitTrackerContext {
   filepath: string,
 }
 
-function renderTable(source: string, plugin: HabitTrackerPlugin) {
-  const { settings } = plugin;
-  const ctx = parseContext(source, settings);
-
-  if (ctx.error) {
-    return createDiv({ cls: 'habitt-error', text: ctx.error })
-  }
-
-  const styles = ctx.tableWidth ? `width: ${ctx.tableWidth};` : '';
-  const table = createEl('table', { cls: 'habitt', attr: { style: styles } })
-  table.appendChild(renderHead(ctx))
-  table.appendChild(renderBody(ctx))
-  return table
-}
-
 function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPluginSettings): HabitTrackerContext {
   const ctx: HabitTrackerContext = {
     startOfWeek: parseInt(settings.startOfWeek, 10),
@@ -119,7 +104,7 @@ function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPlug
 
   const mon = moment(`${calendarData.year}-${calendarData.month}`, 'YYYY-M')
   if (!mon.isValid()) {
-    ctx.error = `Fail: Invalid Date ${m[0]}`;
+    ctx.error = `Fail: Invalid Date ${calendarData.year}-${calendarData.month}`;
     return ctx;
   }
 
@@ -139,57 +124,6 @@ function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPlug
       ctx.marks.set(d.date(), entry)
     }
   })
-
-  return ctx;
-}
-
-function parseContext(source: string, settings: HabitTrackerPluginSettings): HabitTrackerContext {
-  const ctx: HabitTrackerContext = {
-    startOfWeek: parseInt(settings.startOfWeek, 10),
-    startDay: 0,
-    monthDays: 0,
-    displayMonth: '',
-    tableWidth: '',
-    marks: new Map<number, Entry>(),
-    settings,
-    error: ''
-  };
-
-  // month
-  const m = source.match(/\[month:\s*(\S*?)\s*\]/);
-  if (!m || !m[1]) {
-    ctx.error = 'Fail: Month not found. e.g. [month: 2021-01]';
-    return ctx;
-  }
-
-  const mon = moment(m[1]);
-  if (!mon.isValid()) {
-    ctx.error = `Fail: Invalid Date ${m[0]}`;
-    return ctx;
-  }
-
-  ctx.displayMonth = mon.format(settings.monthFormat);
-  ctx.startDay = mon.startOf('month').day();
-  ctx.monthDays = mon.endOf('month').date();
-
-  // table width (optional)
-  const wm = source.match(/\[width:\s*(\S*?)\s*\]/);
-  if (wm && wm[1]) {
-    ctx.tableWidth = wm[1];
-  }
-
-  // punch in
-  const pm = source.match(/\((.*?)\)/g);
-  if (pm && pm.length) {
-    pm.forEach(t => {
-      const m = t.match(/\((.*?)(,(.*?))?\)/);
-      if (m) {
-        const date = parseInt(m[1], 10);
-        const tag = m[3];
-        // ctx.marks.set(date, tag);
-      }
-    });
-  }
 
   return ctx;
 }
