@@ -199,7 +199,7 @@ function renderBody(ctx: HabitTrackerContext): HTMLElement {
           const md_div = dots.createDiv();
           MarkdownRenderer.renderMarkdown(input, md_div, ctx.filepath, this)
         } else {
-          dots.createDiv({ text: input })
+          dots.createDiv({ cls: 'habit-content', text: input})
         }
       }
     }
