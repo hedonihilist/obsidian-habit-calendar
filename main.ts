@@ -191,7 +191,7 @@ function renderBody(ctx: HabitTrackerContext): HTMLElement {
       }
       const dots = div.createDiv({ cls: 'habitt-dots' });
       if (hasOwn) {
-        const input = ctx.marks.get(d).content || '✔️'
+        const input = ctx.marks.get(d).content
         // treat as HTML
         if (enableHTML && ctx.calendarData.format == 'html') {
           dots.innerHTML = `<div>${input}</div>`
