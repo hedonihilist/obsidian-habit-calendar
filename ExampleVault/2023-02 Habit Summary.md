@@ -11,10 +11,10 @@ for (let file of files) {
 	}
 	for (let task of file.file.tasks) {
 		if (task.tags.contains('#habit') && task.checked && task.reading) { // select only checked habits
-			data[date] += '📖'
+			data[date] += `📖x ${task.reading} min\n`
 		}
 		if (task.tags.contains('#habit') && task.checked && task.jogging) { // select only checked habits
-			data[date] += '🏃'
+			data[date] += `🏃x ${task.jogging} min\n`
 		}
 		if (task.tags.contains('#habit') && task.checked && task.wakey) {
 			data[date] += '🌞'
