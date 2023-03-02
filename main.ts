@@ -45,6 +45,14 @@ interface CalendarData {
   entries: Entry[]
 }
 
+interface CalendarParam {
+  year: number
+  month: number
+  format: string
+  width: string
+  data: any // can be (1) array of Entry. (2) Table
+}
+
 export default class HabitTrackerPlugin extends Plugin {
   settings: HabitTrackerPluginSettings;
 
@@ -55,7 +63,9 @@ export default class HabitTrackerPlugin extends Plugin {
 
 
     //@ts-ignore
-    window.renderHabitCalendar = (el: HTMLElement, calendarData: CalendarData): void => {
+    window.renderHabitCalendar = (el: HTMLElement, dv: any, calendarParam: CalendarParam): void => {
+      const filepath = dv.current().file.path
+      let calendarData = param2CalendarData(dv, calendarParam)
       let ctx = fromCalendarData(calendarData, this.settings)
 
       const styles = ctx.tableWidth ? `width: ${ctx.tableWidth};` : '';
@@ -64,6 +74,7 @@ export default class HabitTrackerPlugin extends Plugin {
       table.appendChild(renderBody(ctx))
       el.appendChild(table);
     }
+
   }
 
   async loadSettings() {
@@ -88,8 +99,8 @@ interface HabitTrackerContext {
   filepath: string,
 }
 
-function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPluginSettings): HabitTrackerContext {
-  const ctx: HabitTrackerContext = {
+function createContext(calendarData: CalendarData, settings: HabitTrackerPluginSettings): HabitTrackerContext {
+  return {
     startOfWeek: parseInt(settings.startOfWeek, 10),
     startDay: 0,
     monthDays: 0,
@@ -101,6 +112,15 @@ function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPlug
     calendarData,
     filepath: calendarData.filepath
   };
+}
+
+function param2CalendarData(dv: any, params: CalendarParam): CalendarData {
+  // TODO
+  return undefined
+}
+
+function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPluginSettings): HabitTrackerContext {
+  const ctx = createContext(calendarData, settings)
 
   const mon = moment(`${calendarData.year}-${calendarData.month}`, 'YYYY-M')
   if (!mon.isValid()) {
