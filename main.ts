@@ -48,8 +48,9 @@ interface CalendarData {
 interface CalendarParam {
   year: number
   month: number
-  format: string
-  width: string
+  format: string  // the way you want the content to be rendered
+  width: string   // width of the calendar, default 100%
+  note_pattern: string    // your daily note file name pattern, leave empty to use 'YYYY-MM-DD' pattern
   data: any // can be (1) array of Entry. (2) Table
 }
 
@@ -114,9 +115,59 @@ function createContext(calendarData: CalendarData, settings: HabitTrackerPluginS
   };
 }
 
+function isTableData(data: any): boolean {
+  return data.successful && data.value && data.value.type == 'table'
+}
+
 function param2CalendarData(dv: any, params: CalendarParam): CalendarData {
-  // TODO
-  return undefined
+  const calendarData: CalendarData = {
+    year: params.year,
+    month: params.month,
+    filepath: dv.current().file.path,
+    width: params.width || "100%",
+    entries: params.data,
+    format: params.format || 'text'
+  }
+  if (isTableData(params.data)) {
+    const headers = params.data.value.headers
+    const values = params.data.value.values
+    type StringToEntry = {
+      [key: string]: Entry
+    }
+    const dataDict: StringToEntry = {}
+    for (let ri = 0; ri < values.length; ri += 1) {
+      // fill calendar day
+      const value = values[ri]
+      const link = value[0]
+      const date = moment(link.fileName(), params.note_pattern)
+      if (!date.isValid()) {
+        continue
+      }
+      const dateString = date.format('YYYY-MM-DD')
+      let entry: Entry = dataDict[dateString]
+      if (!entry) {
+        entry = {
+          'date': dateString,
+          'content': '',
+          'link': link.path
+        }
+        dataDict[dateString] = entry
+      }
+
+      // fill content
+      for (let ci = 1; ci < value.length; ci++) {
+        if (value[ci]) {
+          // if the header contains a "|", use the string after "|" as label
+          const splited = headers[ci].split("|")
+          const label = splited[splited.length-1]
+          entry.content += `${label} ${value[ci]}\n`
+        }
+      }
+    }
+    calendarData.entries = Object.values(dataDict)
+    calendarData.format = 'text'
+  }
+  return calendarData
 }
 
 function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPluginSettings): HabitTrackerContext {
@@ -219,7 +270,7 @@ function renderBody(ctx: HabitTrackerContext): HTMLElement {
           const md_div = dots.createDiv();
           MarkdownRenderer.renderMarkdown(input, md_div, ctx.filepath, this)
         } else {
-          dots.createDiv({ cls: 'habit-content', text: input})
+          dots.createDiv({ cls: 'habit-content', text: input })
         }
       }
     }
@@ -285,18 +336,18 @@ class HabitTrackerSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
-    
+
     new Setting(containerEl)
-    .setName('Enable Markdown Rendering')
-    .setDesc('Treat your input text as Markdown.')
-    .addToggle(
-      dropdown => dropdown
-        .setValue(this.plugin.settings.enableMarkdown)
-        .onChange(async (value) => {
-          this.plugin.settings.enableMarkdown = value;
-          await this.plugin.saveSettings();
-        })
-    );
+      .setName('Enable Markdown Rendering')
+      .setDesc('Treat your input text as Markdown.')
+      .addToggle(
+        dropdown => dropdown
+          .setValue(this.plugin.settings.enableMarkdown)
+          .onChange(async (value) => {
+            this.plugin.settings.enableMarkdown = value;
+            await this.plugin.saveSettings();
+          })
+      );
 
     new Setting(containerEl)
       .setName('Month Format')
