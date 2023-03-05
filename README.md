@@ -4,19 +4,114 @@ Monthly Habit Calendar for DataviewJS.
 
 This plugin helps you render a calendar inside DataviewJS code block, showing your habit status within a month. It's based on the [Habit Track](https://github.com/duoani/obsidian-habit-tracker) plugin by [@duoani](https://github.com/duoani).
 
-
-## How To
-
 This plugin is intended to be used alongside [DataviewJS](https://blacksmithgu.github.io/obsidian-dataview/). All you need to do is prepare the data and call `renderHabitCalendar` in a dataviewjs code block.
+
+There are two ways to populate the calendar:
+
+1. Dataview Table
+2. manually collected data
+
+## change log
+
+1.0.x -> 1.1.x
+
+changed the `renderHabitCalendar` interface, from
+
+```typescript
+renderHabitCalendar(this.container, {
+  year: number
+  month: number
+  width: string
+  filepath: string
+  format: string
+  entries: Entry[]
+})
+```
+
+to
+
+```typescript
+renderHabitCalendar(this.container, dv, {
+  year: number  // required
+  month: number // required
+  data: any // required
+  width: string
+  format: string
+  note_pattern: string
+})
+```
+
+
+## Calendar from Dataview Table
+
+For it to work, prepare a [Dataview Table](https://blacksmithgu.github.io/obsidian-dataview/queries/query-types/#table) with the first column as the file link and other columns as habits.
+
+~~~
+```dataview
+table habit1 as "Habit1|😊", habit2 as "Habit2|👍"
+from "diarys"
+```
+~~~
+
+For example, with the above [DQL](https://blacksmithgu.github.io/obsidian-dataview/queries/structure/) you will get a table like this:
+
+![dvtable](images/dvtable.png)
+
+To render the table as a calendar, pass the result of DQL to `renderHabitCalendar` in a dataviewjs block:
+
+~~~
+```dataviewjs
+const table = await dv.query(`
+table
+habit1 as "Habit1|😊", habit2 as "Habit2|👍" 
+from "diarys"`)
+console.log(table)
+renderHabitCalendar(this.container, dv, {
+	year: 2023,
+	month: 2,
+	data: table
+})
+```
+~~~
+
+The calendar should look like this:
+
+![calendar](images/hbcalendar.png)
+
+Notice that you can customize the habit label 😊 in the calendar by setting the header to "aaabbbccc|label". the text after the last "|" will be used as the label.
+
+### not using YYYY-MM-DD ?
+
+If you are not using the 'YYYY-MM-DD' naming pattern with your daily note, you can set the pattern while calling `renderHabitCalendar`, so that this plugin can associate the habits with correct daily note:
+
+~~~
+```dataviewjs
+const table = await dv.query(`
+table
+habit1 as "H1|👍", habit2 as "H2|😊" 
+from "日记"`)
+console.log(table)
+renderHabitCalendar(this.container, dv, {
+	year: 2023,
+	month: 2,
+	data: table,
+  note_pattern: 'YYYY年MM月DD日',
+})
+```
+~~~
+
+## Calendar from manually collected data
+
+This plugin also accepts customized data, jump to the bottom for detailed usage.
 
 ### Basic Usage
 
 ~~~
 ```dataviewjs
-renderHabitCalendar(this.container, {
+renderHabitCalendar(this.container, dv, {
   year: 2023,
   month: 1,
-  entries: [{
+  data: [{
     date: '2023-01-01',
     content: '⭐'
   }, {
@@ -43,10 +138,10 @@ Say your daily notes are named like `2023年01月01日.md`, all you need to do i
 
 ~~~
 ```
-renderHabitCalendar(this.container, {
+renderHabitCalendar(this.container, dv, {
   year: 2023,
   month: 1,
-  entries: [{
+  data: [{
     date: '2023-01-01',
     content: '⭐',
     link: '2023年01月01日'  // like this line
@@ -66,11 +161,11 @@ Want to fill the calendar with HTML? Here we go:
 
 ~~~
 ```dataviewjs
-renderHabitCalendar(this.container, {
+renderHabitCalendar(this.container, dv, {
   year: 2023,
   month: 1,
   format: 'html',   // set the format to html
-  entries: [{
+  data: [{
     date: '2023-01-01',
     content: '<a href="https://www.google.com">Google</a>'
   }, {
@@ -91,11 +186,11 @@ If you don't want to write html, write markdown then.
 
 ~~~
 ```dataviewjs
-renderHabitCalendar(this.container, {
+renderHabitCalendar(this.container, dv, {
   year: 2023,
   month: 1,
   format: 'markdown',   // don't forget to change the format~
-  entries: [{
+  data: [{
     date: '2023-01-01',
     content: '[Google](https://www.google.com)'
   }, {
@@ -117,19 +212,19 @@ renderHabitCalendar(this.container, {
 
 The first argument should be the html container in which the calendar will be created. Most of the time, `this.container` will do.
 
-You can pass the habit data through the second argument. The following fields are supported:
+The second argument should be the Dataview object `dv`, which will be used to get information of the notes.
+
+You can pass the habit data through the third argument. The following fields are supported:
 
 - `year`: year of the calendar, apparently
 - `month`: month of the calendar
-- `entries`: a list of entries containing the habit data per day. A entry contains
+- `data`: this filed can be a Dataview Table or a list of entries containing the habit data per day. A entry contains
     - `date`: date of the habit
     - `content`: whatever you want to put in the calendar
     - `link`: the file you want the entry to link to, just pass in the text inside `[[]]`. For example, if the original obsidian link is `[[2023-01-01]]`, pass in `2023-01-01`.
-- `format`: the way you want `entries[i].content` to be rendered. Choose `html` or `markdown` to render as html or markdown, make sure their cooresopnding settings are enabled in the settings tab. Leave empty to treat the content as plain text.
-- `filepath`: if you want to render the content as markdown, pass the current file path thru this field.
+- `format`: the way you want `data[i].content` to be rendered. Choose `html` or `markdown` to render as html or markdown, make sure their cooresopnding settings are enabled in the settings tab. Leave empty to treat the content as plain text.
 
 ## How I record my habits
-
 
 
 Check out the [example vault](https://github.com/hedonihilist/obsidian-habit-calendar/tree/master/ExampleVault). Your habits can look like this
@@ -174,7 +269,7 @@ for (let file of files) {
 		}
 	} 
 }
-renderHabitCalendar(this.container, {year: 2023, month: 2, entries: data, filepath: dv.current().file.path, width: "100%"}) 
+renderHabitCalendar(this.container, dv, {year: 2023, month: 2, data: data}) 
 ```
 ~~~
 

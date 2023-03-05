@@ -1,15 +1,19 @@
 
+
 ## Summary
 
 ```dataviewjs
-let files = dv.pages(`"diarys"`)
+let pages = dv.pages(`"diarys"`)
+const year = 2023
+const month = 2
+
 let data = {}
-for (let file of files) {
-	let date = file.file.name
+for (let page of pages) {
+	let date = page.file.name
 	if (!(date in data)) {
 		data[date] = ''
 	}
-	for (let task of file.file.tasks) {
+	for (let task of page.file.tasks) {
 		if (task.tags.contains('#habit') && task.checked && task.reading) { // select only checked habits
 			data[date] += `📖x ${task.reading} min\n`
 		}
@@ -25,7 +29,7 @@ let calendarData = []
 for (let date in data) {
 	calendarData.push({date: date, content: data[date]})
 }
-renderHabitCalendar(this.container, {year: 2023, month: 2, entries: calendarData, filepath: dv.current().file.path, width: "100%"}) 
+renderHabitCalendar(this.container, dv, {year, month, data: calendarData}) 
 ```
 
 ## Reading
@@ -57,7 +61,7 @@ for (let file of files) {
 	} 
 }
 console.log(data)
-renderHabitCalendar(this.container, {year: 2023, month: 2, entries: data, filepath: dv.current().file.path, width: "100%"}) 
+renderHabitCalendar(this.container, dv, {year: 2023, month: 2, data: data}) 
 ```
 
 ## Jogging
@@ -74,7 +78,6 @@ for (let file of files) {
 	} 
 }
 dv.paragraph(`You 🏃 jogged for **${sum}** min this month`)
-console.log(sum)
 ```
 
 
@@ -90,7 +93,7 @@ for (let file of files) {
 	} 
 }
 console.log(data)
-renderHabitCalendar(this.container, {year: 2023, month: 2, entries: data, filepath: dv.current().file.path, width: "100%"}) 
+renderHabitCalendar(this.container, dv, {year: 2023, month: 2, data: data, filepath: dv.current().file.path, width: "100%"}) 
 ```
 
 ```dataviewjs
@@ -110,5 +113,5 @@ for (let file of files) {
 	} 
 }
 console.log(data)
-renderHabitCalendar(this.container, {year: 2023, month: 2, entries: data, filepath: dv.current().file.path, width: "100%"}) 
+renderHabitCalendar(this.container, dv, {year: 2023, month: 2, data: data, filepath: dv.current().file.path, width: "100%"}) 
 ```
