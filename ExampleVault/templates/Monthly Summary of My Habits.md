@@ -1,12 +1,10 @@
 
-Here is how I summarize my habits in a month.
-
 ## Summary
 
 ```dataviewjs
 let pages = dv.pages(`"diarys"`)
-const year = 2023
-const month = 2
+const year = {{date:YYYY}}
+const month = {{date:M}}
 const date_pattern = 'YYYY-MM-DD'
 const habit_tag = '#habit'
 const habits = {
@@ -40,8 +38,8 @@ renderHabitCalendar(this.container, dv, {year, month, data: calendarData, date_p
 
 ```dataviewjs
 let files = dv.pages(`"diarys"`)
-const year = 2023
-const month = 2
+const year = {{date:YYYY}}
+const month = {{date:M}}
 const habit = 'reading'
 let sum = 0
 
@@ -62,8 +60,8 @@ dv.paragraph(`You read 📖 for **${sum}** min this month`)
 ```dataviewjs
 let files = dv.pages(`"diarys"`)
 const habit = 'reading'
-const year = 2023
-const month = 2
+const year = {{date:YYYY}}
+const month = {{date:M}}
 const habit_str = '📖 {habit} min'
 
 let data = []
@@ -83,8 +81,8 @@ renderHabitCalendar(this.container, dv, {year, month, data})
 
 ```dataviewjs
 let files = dv.pages(`"diarys"`)
-const year = 2023
-const month = 2
+const year = {{date:YYYY}}
+const month = {{date:M}}
 const habit = 'jogging'
 let sum = 0
 
@@ -105,8 +103,8 @@ dv.paragraph(`You 🏃 jogged for **${sum}** min this month`)
 ```dataviewjs
 let files = dv.pages(`"diarys"`)
 const habit = 'jogging'
-const year = 2023
-const month = 2
+const year = {{date:YYYY}}
+const month = {{date:M}}
 const habit_str = '🏃 {habit} min'
 
 let data = []
@@ -128,8 +126,8 @@ renderHabitCalendar(this.container, dv, {year, month, data})
 ```dataviewjs
 let files = dv.pages(`"diarys"`)
 const habit = 'wakey'
-const year = 2023
-const month = 2
+const year = {{date:YYYY}}
+const month = {{date:M}}
 const habit_str = '🌞'
 
 let data = []

@@ -48,7 +48,7 @@ For it to work, prepare a [Dataview Table](https://blacksmithgu.github.io/obsidi
 
 ~~~
 ```dataview
-table habit1 as "Habit1|😊", habit2 as "Habit2|👍"
+table coding as "Coding|👨‍💻", swim as "Swimming|🏊"
 from "diarys"
 ```
 ~~~
@@ -62,9 +62,9 @@ To render the table as a calendar, pass the result of DQL to `renderHabitCalenda
 ~~~
 ```dataviewjs
 const table = await dv.query(`
-table
-habit1 as "Habit1|😊", habit2 as "Habit2|👍" 
-from "diarys"`)
+table coding as "Coding|👨‍💻", swim as "Swimming|🏊"
+from "diarys"
+`)
 console.log(table)
 renderHabitCalendar(this.container, dv, {
 	year: 2023,
@@ -78,7 +78,7 @@ The calendar should look like this:
 
 ![calendar](images/hbcalendar.png)
 
-Notice that you can customize the habit label 😊 in the calendar by setting the header to "aaabbbccc|label". the text after the last "|" will be used as the label.
+Notice that you can customize the habit label 👨‍💻 in the calendar by setting the header to "aaabbbccc|label". The text after the last "|" will be used as the label.
 
 ### not using YYYY-MM-DD ?
 
@@ -87,15 +87,15 @@ If you are not using the 'YYYY-MM-DD' naming pattern with your daily note, you c
 ~~~
 ```dataviewjs
 const table = await dv.query(`
-table
-habit1 as "H1|👍", habit2 as "H2|😊" 
-from "日记"`)
+table coding as "Coding|👨‍💻", swim as "Swimming|🏊"
+from "日记"
+`)
 console.log(table)
 renderHabitCalendar(this.container, dv, {
 	year: 2023,
 	month: 2,
 	data: table,
-  note_pattern: 'YYYY年MM月DD日',
+  date_pattern: 'YYYY年MM月DD日'
 })
 ```
 ~~~
@@ -129,31 +129,6 @@ The above code will be rendered like this:
 If your daily note is of `YYYY-MM-DD` format, the calendar will be associated with your daily note automatically. You can hover over the number or click the number to access the corresponding note.
 
 ![hover](images/hover.gif)
-
-### Customize link
-
-In case you have a different daily note format or want to customize linking, just pass in the link of each entry.
-
-Say your daily notes are named like `2023年01月01日.md`, all you need to do is add the `link` field and set to `2023年01年01日`:
-
-~~~
-```
-renderHabitCalendar(this.container, dv, {
-  year: 2023,
-  month: 1,
-  data: [{
-    date: '2023-01-01',
-    content: '⭐',
-    link: '2023年01月01日'  // like this line
-  }, {
-    date: '2023-01-03',
-    content: '⭐',
-    link: '2023年01月03日'
-  }]
-})
-```
-~~~
-
 
 ### Fill Calendar with HTML
 
@@ -196,8 +171,7 @@ renderHabitCalendar(this.container, dv, {
   }, {
     date: '2023-01-03',
     content: '⭐',
-  }],
-  filepath: dv.current().file.path  // also add this line
+  }]
 })
 ```
 ~~~
@@ -206,9 +180,30 @@ renderHabitCalendar(this.container, dv, {
 
 **Note1:** Sometimes the markdown text is not rendered correctly. Try switching to other files and switching back.
 
-**Note2:** the `filepath` is the path of the file where dataviewjs code lies. If the markdown text contains some relative link, you should input this field.
+### Customize link
 
-### Detailed Usage
+In case you want your habit linked to other notes rather than associate with the daily note, you can pass in the link of each entry.
+
+Say you want the first day linked to a note `Monthly Target.md` set the `link` attribute to it:
+
+~~~
+```dataviewjs
+renderHabitCalendar(this.container, dv, {
+  year: 2023,
+  month: 1,
+  data: [{
+    date: '2023-01-01',
+    content: '⭐',
+    link: 'Monthly Target'  // like this line
+  }, {
+    date: '2023-01-03',
+    content: '⭐',
+  }]
+})
+```
+~~~
+
+## Detailed Usage
 
 The first argument should be the html container in which the calendar will be created. Most of the time, `this.container` will do.
 
@@ -260,20 +255,68 @@ Use dataviewjs to query the accomplished habits and pass the data to `renderHabi
 ~~~
 ```
 let files = dv.pages(`"diarys"`)
+const habit = 'reading'
+const year = 2023
+const month = 2
+const habit_str = '📖 {habit} min'  // {habit} will be replaced with the value of corresponding habit.
+
 let data = []
 for (let file of files) {
 	console.log(file)
 	for (let task of file.file.tasks) {
-		if (task.tags.contains('#habit') && task.checked && task.reading) { // select only checked habits
-			data.push({date: file.file.name, content: `📖 ${task.reading} min`})
+		if (task.tags.contains('#habit') && task.checked && task[habit]) { // select only checked habits
+			data.push({date: file.file.name, content: habit_str.replace('{habit}', task[habit])})
 		}
 	} 
 }
-renderHabitCalendar(this.container, dv, {year: 2023, month: 2, data: data}) 
+console.log(data)
+renderHabitCalendar(this.container, dv, {year, month, data}) 
 ```
 ~~~
 
 ![reading](images/reading.png)
+
+### View all you habits
+
+Use the following code to display all the habits in a single calendar.
+
+~~~
+```dataviewjs
+let pages = dv.pages(`"diarys"`)
+const year = 2023
+const month = 2
+const date_pattern = 'YYYY-MM-DD'
+const habit_tag = '#habit'
+const habits = {
+	'reading': '📖 x {habit} min',  // this habit will be displayed like '📖 x 30 min'
+	'jogging': '🏃 x {habit} min',
+	'wakey': '🌞',
+}
+
+let data = {}
+for (let page of pages) {
+	let date = page.file.name
+	data[date] = data[date] || ''
+	for (let task of page.file.tasks.filter(task => task.tags.contains(habit_tag) && task.checked)) {
+		for (let habit in habits) {
+			if (task[habit]) {
+				data[date] += habits[habit].replace('{habit}', task[habit]) + '\n'
+			}
+		}
+	} 
+}
+
+let calendarData = []
+for (let date in data) {
+	calendarData.push({date: date, content: data[date]})
+}
+renderHabitCalendar(this.container, dv, {year, month, data: calendarData, date_pattern}) 
+```
+~~~
+
+It will look like this:
+
+![all habits](images/allhabits.png)
 
 ## Plans
 

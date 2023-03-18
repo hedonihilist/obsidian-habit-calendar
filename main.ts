@@ -43,6 +43,7 @@ interface CalendarData {
   filepath: string
   format: string
   entries: Entry[]
+  date_pattern: string
 }
 
 interface CalendarParam {
@@ -50,7 +51,8 @@ interface CalendarParam {
   month: number
   format: string  // the way you want the content to be rendered
   width: string   // width of the calendar, default 100%
-  note_pattern: string    // your daily note file name pattern, leave empty to use 'YYYY-MM-DD' pattern
+  note_pattern: string    // deprecated use date_pattern instead
+  date_pattern: string    // your daily note file name pattern, leave empty to use 'YYYY-MM-DD' pattern
   data: any // can be (1) array of Entry. (2) Table
 }
 
@@ -126,7 +128,8 @@ function param2CalendarData(dv: any, params: CalendarParam): CalendarData {
     filepath: dv.current().file.path,
     width: params.width || "100%",
     entries: params.data,
-    format: params.format || 'text'
+    format: params.format || 'text',
+    date_pattern: params.date_pattern || params.note_pattern || 'YYYY-MM-DD'
   }
   if (isTableData(params.data)) {
     const headers = params.data.value.headers
@@ -139,11 +142,11 @@ function param2CalendarData(dv: any, params: CalendarParam): CalendarData {
       // fill calendar day
       const value = values[ri]
       const link = value[0]
-      const date = moment(link.fileName(), params.note_pattern)
+      const date = moment(link.fileName(), calendarData.date_pattern)
       if (!date.isValid()) {
         continue
       }
-      const dateString = date.format('YYYY-MM-DD')
+      const dateString = link.fileName()
       let entry: Entry = dataDict[dateString]
       if (!entry) {
         entry = {
@@ -190,7 +193,7 @@ function fromCalendarData(calendarData: CalendarData, settings: HabitTrackerPlug
 
   // punch in
   calendarData.entries.forEach(entry => {
-    const d = moment(entry.date, 'YYYY-MM-DD')
+    const d = moment(entry.date, calendarData.date_pattern)
     if (d.year() == calendarData.year && d.month() + 1 == calendarData.month) {
       ctx.marks.set(d.date(), entry)
     }
