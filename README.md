@@ -1,5 +1,7 @@
 ## Obsidian Habit Calendar Plugin
 
+[中文文档](./README-zh.md)
+
 Monthly Habit Calendar for DataviewJS. 
 
 This plugin helps you render a calendar inside DataviewJS code block, showing your habit status within a month. It's based on the [Habit Track](https://github.com/duoani/obsidian-habit-tracker) plugin by [@duoani](https://github.com/duoani).
