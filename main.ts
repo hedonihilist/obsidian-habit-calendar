@@ -67,7 +67,7 @@ export default class HabitTrackerPlugin extends Plugin {
 
     //@ts-ignore
     window.renderHabitCalendar = (el: HTMLElement, dv: any, calendarParam: CalendarParam): void => {
-      const filepath = dv.current().file.path
+      const filepath = dv?.current()?.file?.path
       let calendarData = param2CalendarData(dv, calendarParam)
       let ctx = fromCalendarData(calendarData, this.settings)
 
@@ -125,7 +125,7 @@ function param2CalendarData(dv: any, params: CalendarParam): CalendarData {
   const calendarData: CalendarData = {
     year: params.year,
     month: params.month,
-    filepath: dv.current().file.path,
+    filepath: dv?.current()?.file?.path,
     width: params.width || "100%",
     entries: params.data,
     format: params.format || 'text',
